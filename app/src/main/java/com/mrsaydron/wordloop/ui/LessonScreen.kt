@@ -1,7 +1,5 @@
 package com.mrsaydron.wordloop.ui
 
-import android.text.InputType
-import android.view.inputmethod.EditorInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -34,13 +32,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.core.widget.addTextChangedListener
+import com.mrsaydron.wordloop.ui.keyboard.InAppEditText
+import com.mrsaydron.wordloop.ui.keyboard.LocalInAppKeyboard
 
 @Composable
 fun LessonScreen(
@@ -51,17 +49,26 @@ fun LessonScreen(
     val allWords by viewModel.allWords.collectAsState()
     val ttsReady by viewModel.ttsReady.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val inAppKeyboard = LocalInAppKeyboard.current
     val editTextRef = remember { mutableStateOf<AppCompatEditText?>(null) }
 
-    LaunchedEffect(state.mode, state.currentWord?.id) {
+    LaunchedEffect(state.mode, state.currentWord?.id, ttsReady) {
         if (state.mode == LessonMode.QUESTION) {
-            editTextRef.value?.requestFocus()
-            keyboardController?.show()
+            keyboardController?.hide()
+            editTextRef.value?.post {
+                editTextRef.value?.requestFocus()
+                val length = editTextRef.value?.text?.length ?: 0
+                editTextRef.value?.setSelection(length)
+            }
+            inAppKeyboard?.show()
+            inAppKeyboard?.enterAction = if (ttsReady) viewModel::checkAnswer else null
             state.currentWord?.word?.let { word ->
                 viewModel.speakWord(word)
             }
         } else {
             keyboardController?.hide()
+            inAppKeyboard?.hide()
+            inAppKeyboard?.enterAction = null
         }
     }
 
@@ -180,39 +187,13 @@ private fun NoSuggestionsTextField(
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        AndroidView(
+        InAppEditText(
+            value = value,
+            onValueChange = onValueChange,
+            onDone = onDone,
+            hint = "Введите слово",
             modifier = Modifier.fillMaxWidth(),
-            factory = { context ->
-                AppCompatEditText(context).apply {
-                    editTextRef.value = this
-                    setSingleLine(true)
-                    setHint("Введите слово")
-                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-                    imeOptions = EditorInfo.IME_ACTION_DONE or
-                        EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-                    addTextChangedListener { editable ->
-                        val newText = editable?.toString().orEmpty()
-                        if (newText != value) {
-                            onValueChange(newText)
-                        }
-                    }
-                    setOnEditorActionListener { _, actionId, _ ->
-                        if (actionId == EditorInfo.IME_ACTION_DONE) {
-                            onDone()
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                }
-            },
-            update = { editText ->
-                if (editText.text?.toString() != value) {
-                    editText.setText(value)
-                    editText.setSelection(value.length)
-                }
-            }
+            editTextRef = editTextRef
         )
     }
 }
