@@ -52,7 +52,24 @@ fun WordLoopApp(modifier: Modifier = Modifier) {
                             onBack = {
                                 viewModel.stopRandomLearning()
                                 navController.popBackStack()
+                            },
+                            onAddWord = { navController.navigate("word_input/add/0") },
+                            onEditWord = { word ->
+                                navController.navigate("word_input/edit/${word.id}")
                             }
+                        )
+                    }
+                    composable("word_input/{mode}/{wordId}") { backStackEntry ->
+                        val modeArg = backStackEntry.arguments?.getString("mode").orEmpty()
+                        val wordIdArg = backStackEntry.arguments
+                            ?.getString("wordId")
+                            ?.toLongOrNull()
+                            ?: 0L
+                        WordInputScreen(
+                            viewModel = viewModel,
+                            mode = WordInputMode.fromRoute(modeArg),
+                            wordId = wordIdArg,
+                            onBack = { navController.popBackStack() }
                         )
                     }
                 }
