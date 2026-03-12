@@ -3,7 +3,10 @@ package com.mrsaydron.wordloop.ui
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +36,11 @@ fun WordLoopApp(modifier: Modifier = Modifier) {
     }
 
     CompositionLocalProvider(LocalInAppKeyboard provides keyboardController) {
-        Box(modifier = modifier.fillMaxSize()) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = navController,
