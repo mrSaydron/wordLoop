@@ -5,6 +5,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
+    id 'com.github.triplet.play'
 }
 
 def keystoreProperties = new Properties()
@@ -21,8 +22,8 @@ android {
         applicationId "com.mrsaydron.wordloop"
         minSdk 24
         targetSdk 35
-        versionCode 4
-        versionName "1.0.3"
+        versionCode 5
+        versionName "1.0.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -69,6 +70,16 @@ android {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
+    }
+}
+
+def playServiceAccountJson = System.getenv("PLAY_SERVICE_ACCOUNT_JSON")
+
+play {
+    track = "internal"
+    defaultToAppBundles = true
+    if (playServiceAccountJson != null && !playServiceAccountJson.isBlank()) {
+        serviceAccountCredentials = file(playServiceAccountJson)
     }
 }
 

@@ -85,3 +85,39 @@ app/src/main/java/com/example/wordcheck/
 ## Иконка
 Иконка приложения задается в `app/src/main/res/drawable/wordcheck_icon.xml`.
 
+## Публикация в Google Play через GitHub Actions
+
+Для проекта добавлен ручной workflow:
+`/.github/workflows/play-internal-release.yml`
+
+Он собирает подписанный `.aab` и загружает его в трек `internal` в Google Play.
+
+### Требуемые GitHub Secrets
+
+- `ANDROID_KEYSTORE_BASE64` — содержимое release keystore в base64.
+- `ANDROID_KEYSTORE_PASSWORD` — пароль keystore.
+- `ANDROID_KEY_ALIAS` — alias ключа подписи.
+- `ANDROID_KEY_PASSWORD` — пароль ключа подписи.
+- `PLAY_SERVICE_ACCOUNT_JSON_BASE64` — JSON сервисного аккаунта Google Play в base64.
+
+### Как запустить релиз
+
+1. Увеличьте `versionCode` в `app/build.gradle` перед релизом.
+2. Откройте в GitHub: `Actions` -> `Play Internal Release`.
+3. Нажмите `Run workflow`.
+4. Дождитесь завершения job `publish-internal`.
+
+### Что делает workflow
+
+1. Декодирует keystore и service account JSON из secrets.
+2. Генерирует `keystore.properties` для release-подписи.
+3. Запускает `:app:bundleRelease`.
+4. Запускает `:app:publishReleaseBundle` для трека `internal`.
+5. Сохраняет `.aab` как build artifact.
+
+### Проверка результата
+
+1. Откройте Google Play Console.
+2. Перейдите в приложение -> `Testing` -> `Internal testing`.
+3. Убедитесь, что появился новый release с нужным `versionCode`.
+
