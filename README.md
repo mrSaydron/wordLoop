@@ -85,39 +85,73 @@ app/src/main/java/com/example/wordcheck/
 ## Иконка
 Иконка приложения задается в `app/src/main/res/drawable/wordcheck_icon.xml`.
 
-## Публикация в Google Play через GitHub Actions
+## Ручной деплой в Google Play (шпаргалка)
 
-Для проекта добавлен ручной workflow:
-`/.github/workflows/play-internal-release.yml`
+Ниже чеклист ручного релиза в Google Play, чтобы не вспоминать шаги каждый раз.
 
-Он собирает подписанный `.aab` и загружает его в трек `internal` в Google Play.
+### 1) Подготовка версии
 
-### Требуемые GitHub Secrets
+1. В `app/build.gradle` увеличьте:
+   - `versionCode` (обязательно: больше предыдущего),
+   - `versionName` (по необходимости, например `1.0.4`).
+2. Проверьте, что приложение собирается локально.
+3. Зафиксируйте изменения в Git (commit/tag по вашему процессу).
 
-- `ANDROID_KEYSTORE_BASE64` — содержимое release keystore в base64.
-- `ANDROID_KEYSTORE_PASSWORD` — пароль keystore.
-- `ANDROID_KEY_ALIAS` — alias ключа подписи.
-- `ANDROID_KEY_PASSWORD` — пароль ключа подписи.
-- `PLAY_SERVICE_ACCOUNT_JSON_BASE64` — JSON сервисного аккаунта Google Play в base64.
+### 2) Подготовка подписи
 
-### Как запустить релиз
+1. Убедитесь, что в корне проекта есть `keystore.properties`.
+2. Проверьте, что в `keystore.properties` корректные поля:
+   - `storeFile`
+   - `storePassword`
+   - `keyAlias`
+   - `keyPassword`
+3. Убедитесь, что файл keystore (`.jks`) доступен по пути из `storeFile`.
 
-1. Увеличьте `versionCode` в `app/build.gradle` перед релизом.
-2. Откройте в GitHub: `Actions` -> `Play Internal Release`.
-3. Нажмите `Run workflow`.
-4. Дождитесь завершения job `publish-internal`.
+Пример `keystore.properties`:
 
-### Что делает workflow
+```properties
+storeFile=/absolute/path/to/release.jks
+storePassword=***
+keyAlias=***
+keyPassword=***
+```
 
-1. Декодирует keystore и service account JSON из secrets.
-2. Генерирует `keystore.properties` для release-подписи.
-3. Запускает `:app:bundleRelease`.
-4. Запускает `:app:publishReleaseBundle` для трека `internal`.
-5. Сохраняет `.aab` как build artifact.
+### 3) Сборка release AAB
 
-### Проверка результата
+Вариант через терминал:
 
-1. Откройте Google Play Console.
-2. Перейдите в приложение -> `Testing` -> `Internal testing`.
-3. Убедитесь, что появился новый release с нужным `versionCode`.
+```bash
+./gradlew :app:clean :app:bundleRelease
+```
+
+Готовый файл:
+`app/build/outputs/bundle/release/app-release.aab`
+
+Вариант через Android Studio:
+`Build` -> `Generate Signed Bundle / APK` -> `Android App Bundle`.
+
+### 4) Загрузка в Google Play Console
+
+1. Откройте [Google Play Console](https://play.google.com/console/).
+2. Выберите приложение.
+3. Перейдите: `Testing` -> `Internal testing` (или нужный трек).
+4. Нажмите `Create new release`.
+5. Загрузите `app-release.aab`.
+6. Заполните release notes.
+7. Нажмите `Review release` -> `Start rollout to Internal testing`.
+
+### 5) Проверка после выкладки
+
+1. Убедитесь, что релиз появился в выбранном треке.
+2. Проверьте, что отображается нужный `versionCode`.
+3. Обновите приложение на тестовом устройстве и проверьте запуск.
+
+### Частые проблемы
+
+- Ошибка `version code ... has already been used`:
+  увеличьте `versionCode` и пересоберите `.aab`.
+- Ошибка подписи:
+  проверьте `keystore.properties`, путь к `.jks`, alias и пароли.
+- Загружен не тот build:
+  убедитесь, что загружаете файл из `app/build/outputs/bundle/release/`.
 
